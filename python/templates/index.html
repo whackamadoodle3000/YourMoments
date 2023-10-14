@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>   
+<head>   
+    <title>Your Moments : GFG</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Heebo:wght@700&family=Roboto&display=swap" rel="stylesheet">
+
+<style>
+    @font-face {
+    font-family: Jumbalo;
+        src: url("static/jumbalo.regular.otf") format("opentype");
+    }
+
+    .mom 
+    {
+        /* font-size: 100px;
+        text-align:center;
+        color: #DB5395;
+        font-family: "Heebo"; */
+        padding: 30px;
+        margin: auto;
+        width: 20%;
+    }
+
+    .head
+    {
+        font-size: 30px;
+        text-align:center;
+        font-family: "Heebo";
+        color: #9CA4C7;
+    }
+
+    .center {
+        display: block;
+        margin-right: auto;
+    }
+
+    body
+    {
+        background-color: #FAFAFA; 
+        font-family: Roboto;
+    }
+    
+    .upload
+    {
+        width:70%;
+        height: 60px;
+        border-radius: 10px;
+        line-height: 60px;
+        text-align: center;
+        background-color: #E0EAF1;
+        margin: auto;
+        font-family: "Heebo";
+    }
+
+    .custom-file-upload
+    {
+        cursor: pointer;
+    }
+
+    .grid-container
+    {
+        text-align: center;
+        align: center;
+    }
+
+    .grid-item
+    {
+        width: 40%;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    input
+    {
+        font-family: "Heebo";
+    }
+
+    form
+    {
+        text-align: center;
+    }
+
+    input[type=file]
+    {
+        background-color: #E0EAF1;
+        border: none;
+        padding: 16px 32px;
+        text-decoration: none;
+        margin: 4px 2px;
+        /* cursor: pointer;  */
+    }
+
+    input[type=submit]
+    {
+        background-color: #DB5495;
+        border: none;
+        color: white;
+        padding: 16px 32px;
+        text-decoration: none;
+        margin: 20px 2px;
+        border-radius: 5px;
+        font-size: 20px;
+    }
+
+</style>
+</head>   
+<body>   
+    <!-- <h1 class = "mom">Your MOMents</h1> -->
+    <div class="mom">
+        <br><br>
+        <img display=block margin=auto src="static/yourmomlogo.svg">
+    </div>
+
+    <form action="/uploadphoto" method = "post" enctype="multipart/form-data">
+        <div class="grid-container">
+            <div class="grid-item">
+                <h2 class="head"> Upload pics of your friends! </h2>
+                <div class="upload">
+                    <!-- <label for="file-upload1" class="custom-file-upload">
+                        Select File
+                    </label> -->
+                    <input multiple style="display: inline" id="file-upload1" type="file" name="file">
+                </div>
+            </div>
+        
+            <div class="grid-item">
+                <h2 class="head head2"> Upload video of your day! </h2>
+                <div class="upload">
+                    <!--<label for="file-upload2" class="custom-file-upload">
+                        Select File
+                    </label>-->
+                    <input style="display: inline" id="file-upload2" type="file" name="file">
+                </div>
+            </div>
+        </div>
+        <input class="submit" type="submit" value="Upload">   
+    </form>
+</body>   
+</html>
