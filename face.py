@@ -17,7 +17,7 @@ def id_face(pil_img, db_path):
     dfs = DeepFace.find(img_path = DEFAULT_FILENAME, db_path = db_path)[0]
     if not dfs.shape[0]:
         return None
-    return dfs.sort_values("VGG-Face_cosine")["identity"][0].split("/")[-1][:-4]
+    return [dfs.sort_values("VGG-Face_cosine")["identity"][i].split("/")[-1][:-4] for i in range(dfs.shape[0])]
 
 '''
 Takes in a PIL Image.
