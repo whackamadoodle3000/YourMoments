@@ -1,1 +1,6 @@
 moviepy
+torch
+torchvision
+torchaudio
+ultralytics
+transformers[torch]
