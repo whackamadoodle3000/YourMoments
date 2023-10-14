@@ -14,8 +14,10 @@ Returns name of face if it finds one.
 '''
 def id_face(pil_img, db_path):
     save_pil(pil_img)
-    dfs = DeepFace.find(img_path = DEFAULT_FILENAME, db_path = db_path)
-    return dfs[0].sort_values("VGG-Face_cosine")["identity"][0].split("/")[-1][:-4]
+    dfs = DeepFace.find(img_path = DEFAULT_FILENAME, db_path = db_path)[0]
+    if not dfs.shape[0]:
+        return None
+    return dfs.sort_values("VGG-Face_cosine")["identity"][0].split("/")[-1][:-4]
 
 '''
 Takes in a PIL Image.
