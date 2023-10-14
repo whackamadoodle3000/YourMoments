@@ -1,5 +1,6 @@
-from moviepy.video.io.VideoFileClip import VideoFileClip
 import os
+os.environ["IMAGEIO_FFMPEG_EXE"] = "/usr/bin/ffmpeg"
+from moviepy.video.io.VideoFileClip import VideoFileClip
 import glob
 import cv2
 from pathlib import Path
