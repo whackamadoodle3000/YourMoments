@@ -18,7 +18,7 @@ from TTS.api import TTS
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
 
 
-with open("eleven.pass", 'r') as file:
+with open("python/eleven.pass", 'r') as file:
     set_api_key(file.read())
 
 
@@ -34,7 +34,7 @@ prompt = """
 """
 
 
-with open("openai.pass", 'r') as file:
+with open("python/openai.pass", 'r') as file:
     openai.api_key = file.read()
 
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
@@ -215,46 +215,46 @@ def get_frames(folder):
     return image_list
 
 def get_files(output_folder):
-    # gpt_query = ""
-    # for i,image in enumerate(get_frames(output_folder)):
+    gpt_query = ""
+    for i,image in enumerate(get_frames(output_folder)):
 
-    #     raw_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        raw_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    #     face_id=None
-    #     # face_id = id_face(Image.fromarray(image), "shrockers/")
+        face_id=None
+        # face_id = id_face(Image.fromarray(image), "shrockers/")
 
-    #     # unconditional image captioning
-    #     inputs = processor(raw_image, return_tensors="pt")
-
-
-    #     out = blip_model.generate(**inputs)
-    #     desc = processor.decode(out[0], skip_special_tokens=True)
-    #     gpt_query += f"{i}: {desc}\n"
-
-    # gpt_query += "\n\n give me a comma separated list of numbers of the top 3 most interesting descriptions. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS:  1,4,6"
-
-    gpt_query = """0: a room with a carpet that has been painted blue
-1: a man and woman sitting in a chair
-2: a man in a suit and tie is standing in a room
-3: a room with a wooden floor and a white wall
-4: a man is walking through an office lobby
-5: a man sitting in a chair with a laptop
-6: a blur of people walking down a street
-7: a man in a blue shirt is standing in front of a computer
-8: a black and white rug
-9: a door is open in an office
-10: two people sitting in a room with computers
-11: a man sitting on a chair in a room
-12: a blur of a person walking down a street
-13: a man sitting at a table in a restaurant
-14: a man with a blue jacket
-15: a man is walking up the stairs in a building
-16: a blur of people on a train
-17: a man holding a stuffed animal
+        # unconditional image captioning
+        inputs = processor(raw_image, return_tensors="pt")
 
 
- give me a comma separated list of numbers of the top 6 most interesting descriptions that make a good storyline together. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS WHERE <number> is a number like 1 or 2 or 3 etc:  <number>,<number>,<number>,<number>,<number>,<number>
-"""
+        out = blip_model.generate(**inputs)
+        desc = processor.decode(out[0], skip_special_tokens=True)
+        gpt_query += f"{i}: {desc}\n"
+
+    gpt_query += "\n\n give me a comma separated list of numbers of the top 3 most interesting descriptions. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS:  1,4,6"
+
+#     gpt_query = """0: a room with a carpet that has been painted blue
+# 1: a man and woman sitting in a chair
+# 2: a man in a suit and tie is standing in a room
+# 3: a room with a wooden floor and a white wall
+# 4: a man is walking through an office lobby
+# 5: a man sitting in a chair with a laptop
+# 6: a blur of people walking down a street
+# 7: a man in a blue shirt is standing in front of a computer
+# 8: a black and white rug
+# 9: a door is open in an office
+# 10: two people sitting in a room with computers
+# 11: a man sitting on a chair in a room
+# 12: a blur of a person walking down a street
+# 13: a man sitting at a table in a restaurant
+# 14: a man with a blue jacket
+# 15: a man is walking up the stairs in a building
+# 16: a blur of people on a train
+# 17: a man holding a stuffed animal
+
+
+#  give me a comma separated list of numbers of the top 6 most interesting descriptions that make a good storyline together. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS WHERE <number> is a number like 1 or 2 or 3 etc:  <number>,<number>,<number>,<number>,<number>,<number>
+# """
     print(gpt_query)
 
     # Make a call to the OpenAI API
@@ -280,7 +280,7 @@ def get_files(output_folder):
 if __name__ == "__main__":
     input_folder = "MOMents"
     output_folder = "MOM10s"
-    #split_into_10s(input_folder, output_folder)
+    split_into_10s(input_folder, output_folder)
 
     # curr_clip = "MOM10s/clip_6.mp4"
 
