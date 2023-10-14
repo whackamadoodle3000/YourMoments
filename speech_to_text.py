@@ -10,8 +10,6 @@ output_mp3_file = "raw_mom.mp3"
 video_clip = mp.VideoFileClip(input_mov_file)
 audio_clip = video_clip.audio
 audio_clip.write_audiofile(output_mp3_file, codec="mp3")
-
-
 video_clip.close()
 audio_clip.close()
 
@@ -20,6 +18,8 @@ print(f"Conversion to MP3 complete. MP3 file saved as '{output_mp3_file}'.")
 
 #using whisper
 audio_file= open(output_mp3_file, "rb")
-transcript = openai.Audio.transcribe("whisper-1", audio_file)
+transcript = (openai.Audio.transcribe("whisper-1", audio_file)).text
 
-print(transcript)
+file_path = "transcript_mom.txt"
+with open(file_path, 'w') as file:
+    file.write(transcript)
