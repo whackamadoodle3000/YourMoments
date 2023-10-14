@@ -3,12 +3,14 @@ import os
 import glob
 
 def find_newest_file(folder_path):
-    list_of_files = glob.glob(os.path.join(folder_path, '*.mov'))
+    list_of_files = glob.glob(os.path.join(folder_path, '*.MOV'))
     latest_file = max(list_of_files, key=os.path.getctime)
     return latest_file
 
-def split_into_10s(input_file, output_folder):
-    clip = VideoFileClip(input_file)
+def split_into_10s(input_folder, output_folder):
+    newest_file = find_newest_file(input_folder)
+
+    clip = VideoFileClip(newest_file)
 
     # Get the duration of the video in seconds
     duration = clip.duration
@@ -31,6 +33,6 @@ def split_into_10s(input_file, output_folder):
     clip.audio.reader.close_proc()
 
 if __name__ == "__main__":
-    input_file = "MOMents/your_video.mov"
+    input_folder = "MOMents"
     output_folder = "MOM10s"
-    split_into_10s(input_file, output_folder)
+    split_into_10s(input_folder, output_folder)
