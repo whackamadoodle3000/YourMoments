@@ -8,7 +8,7 @@ from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
 
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
 
 def find_newest_file(folder_path):
     list_of_files = glob.glob(os.path.join(folder_path, '*.MOV'))
@@ -48,15 +48,16 @@ def extract_frames(video_path, frame_interval=30):
         results = model.predict(source=image, save_conf=True)
         confs = results[0].boxes.conf
         things = [model.names[int(c)] for i,c in enumerate(results[0].boxes.cls) if float(confs[i])>0.5]
+        print(things)
 
-        # # make raw_image the object u want
-        # raw_image = image.convert('RGB')
+        # make raw_image the object u want
+        raw_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        # # unconditional image captioning
-        # inputs = processor(raw_image, return_tensors="pt")
+        # unconditional image captioning
+        inputs = processor(raw_image, return_tensors="pt")
 
-        # out = model.generate(**inputs)
-        # print(processor.decode(out[0], skip_special_tokens=True))
+        out = blip_model.generate(**inputs)
+        print(processor.decode(out[0], skip_special_tokens=True))
 
         list_of_lists_of_things.append(things)
      
@@ -91,4 +92,4 @@ if __name__ == "__main__":
     input_folder = "MOMents"
     output_folder = "MOM10s"
     #split_into_10s(input_folder, output_folder)
-    extract_frames("MOM10s/clip_10.mp4")
+    extract_frames("MOM10s/clip_13.mp4")
