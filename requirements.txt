@@ -4,3 +4,6 @@ torchvision
 torchaudio
 ultralytics
 transformers[torch]
+openai
+deepface
+TTS
