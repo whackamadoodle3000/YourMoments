@@ -18,6 +18,7 @@ from pydub import AudioSegment
 from random import randint
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips, CompositeAudioClip
 from moviepy.audio.fx.all import volumex
+import moviepy.editor as mp
 
 with open("../eleven.pass", 'r') as file:
     set_api_key(file.read())
@@ -329,12 +330,38 @@ def make_background_audio(voiceover):
     return background_audio
 
 
+def apply_frame_filter(frame, color, original_weight):
+    # Convert the frame to grayscale
+    gray_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    # Apply color grading to the grayscale frame
+    colored_frame = cv2.applyColorMap(gray_frame, color)
+    # Combine the colored frame with the original frame
+    result_frame = cv2.addWeighted(frame, original_weight, colored_frame, 1 - original_weight, 0)
+    return result_frame
+
+
+def apply_general_filter(video_clip, color, original_weight, lum, blackwhite): #lower lum num = darker
+    #step1: tint
+    if (not blackwhite):
+        filtered_frames = [apply_frame_filter(frame, color, original_weight) for frame in video_clip.iter_frames(fps=video_clip.fps)]
+        filtered_clip = mp.ImageSequenceClip(filtered_frames, fps=video_clip.fps) #add clips together to make vid
+        filtered_clip = filtered_clip.set_audio(video_clip.audio) #fix audio
+    
+    else:
+         filtered_clip = filtered_clip.fx(vfx.blackwhite)
+    
+    #step 2: luminosity
+    filtered_clip = filtered_clip.fx(vfx.colorx, lum)
+
+    return filtered_clip
+
+
 def choose_filter(voiceover):
     voiceover = ' '.join(voiceover)
 
     prompt = voiceover + """\nGiven the above text transcripts, analyze the situation and tone to find the most appropriate filter for the video.
-        Available adjectives are [1]'black and white', [2]'mexico', [3]'twilight', [4]'neon',
-        [5]'faded' [6]'no filter'. Give the answer as a single digit
+        Available adjectives are [1]'spooky mystery y2k', [2]'royal historical ball', [3]'dark night', [4]'faded memories',
+        [5]'dirty yellow' [6]'aesthetic film' [7]'spy movie noir'. Give the answer as a single digit
         based on the given song indexes. Do not give any answer other than a single digit without brackets.
         For example, your output can be 3. output:"""
 
@@ -349,15 +376,16 @@ def choose_filter(voiceover):
     max_tokens=200
     )
 
-    filter_dict = {1: [],
-                2: [],
-                3: [],
-                4: [],
-                5: [],
-                6: []}
+    filter_dict = {1: [cv2.COLORMAP_DEEPGREEN,0.6,0.6,False],
+                2: [cv2.COLORMAP_OCEAN,0.6,0.3,False],
+                3: [cv2.COLORMAP_BONE, .9,.3,False],
+                4: [cv2.COLORMAP_SUMMER,.6,1,False],
+                5: [cv2.COLORMAP_DEEPGREEN, .9,1,False],
+                6: [cv2.COLOR_VIRIDIS, .9,.6,False],
+                7: [None,None, .8,True]
+                }
     return filter_dict[genre_key]
     
-
 
 
 
@@ -550,4 +578,11 @@ def generate_video():
     audio_background = volumex(audio_background, 0.4)
     final_audio = CompositeAudioClip([final_clip.audio, audio_background]) #add in background audio to create final audio
     final_clip = final_clip.set_audio(final_audio) #set audio to final audio
+
+    params = choose_filter(voiceovers)
+    final_clip = apply_general_filter(final_clip, params[0], params[1], params[2], params[3])
+
+
+
     final_clip.write_videofile("static/running5.mp4")
+

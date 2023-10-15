@@ -3,6 +3,7 @@ import os
 # os.environ["IMAGEIO_FFMPEG_EXE"] = "/usr/bin/ffmpeg"
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.editor import *
+import moviepy.editor as mp
 import glob
 import cv2
 from pathlib import Path
@@ -313,6 +314,31 @@ def make_background_audio(voiceover):
     #TODO loop if the song is too short? 
     return
 
+def apply_frame_filter(frame, color, original_weight):
+    # Convert the frame to grayscale
+    gray_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+    # Apply color grading to the grayscale frame
+    colored_frame = cv2.applyColorMap(gray_frame, color)
+    # Combine the colored frame with the original frame
+    result_frame = cv2.addWeighted(frame, original_weight, colored_frame, 1 - original_weight, 0)
+    return result_frame
+
+
+def apply_general_filter(video_clip, color, original_weight, lum, blackwhite): #lower lum num = darker
+    #step1: tint
+    if (not blackwhite):
+        filtered_frames = [apply_frame_filter(frame, color, original_weight) for frame in video_clip.iter_frames(fps=video_clip.fps)]
+        filtered_clip = mp.ImageSequenceClip(filtered_frames, fps=video_clip.fps) #add clips together to make vid
+        filtered_clip = filtered_clip.set_audio(video_clip.audio) #fix audio
+    
+    else:
+         filtered_clip = filtered_clip.fx(vfx.blackwhite)
+    
+    #step 2: luminosity
+    filtered_clip = filtered_clip.fx(vfx.colorx, lum)
+
+    return filtered_clip
+
 
 def choose_filter(voiceover):
     voiceover = ' '.join(voiceover)
@@ -492,4 +518,8 @@ if __name__ == "__main__":
     audio_background = volumex(audio_background, 0.2)
     final_audio = mp.CompositeAudioClip([final_clip.audio, audio_background]) #add in background audio to create final audio
     final_clip = final_clip.set_audio(final_audio) #set audio to final audio
+
+    params = choose_filter(voiceovers)
+    final_clip = apply_general_filter(final_clip, params[0], params[1], params[2], params[3])
+
     final_clip.write_videofile("running8.mp4")
