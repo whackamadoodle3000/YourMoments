@@ -316,7 +316,7 @@ def make_background_audio(voiceover):
                 5: 'fun_jazz.mp3',
                 6: 'nostalgic.mp3',
                 7: 'sad_rainy.mp3',
-                8: 'gentle_uplifting',
+                8: 'gentle_uplifting.mp3',
                 9: 'technology_mystery_intrigue_upbeat.mp3',
                 10: 'upbeat_funky.mp3',
                 11: 'upbeat_lighthearted_happy.mp3',
@@ -507,7 +507,7 @@ def generate_video():
     
     input_folder = "../MOMents"
     output_folder = "../MOM10s"
-    # split_into_10s(input_folder, output_folder)
+    split_into_10s(input_folder, output_folder)
 
     # curr_clip = "MOM10s/clip_6.mp4"
 
@@ -591,4 +591,4 @@ def generate_video():
 
 
 
-generate_video()
+# generate_video()
