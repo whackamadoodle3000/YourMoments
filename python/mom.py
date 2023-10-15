@@ -71,8 +71,7 @@ PROMPT:
 
 prompt = """
 
-we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Note that the storyline MUST be coherent and very easy to follow. Each scene has to transition to the next scene in a way that makes sense.
-
+we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Consider drama such as a divorce, a murder, a spy noir film, a regal ball, an affair, or a robbery happening. However, don't choose more than one and overcomplicate the story. Also, you DO NOT always have to choose one. Note that the storyline MUST be coherent and very easy to follow.  Include transition words when possible. Each scene has to transition to the next scene in a way that makes sense.
 Here are more concrete limitations:
 For the 3 scenes that have the 3rd person narration, they should only be 1-2 sentences long.
 For all 6 scenes, format your output for each scene as an element, inside of a Python list of 6 elements. Each element will have 2 elements nested inside, which will be NARRATION or TRANSCRIPT and then the actual text. For example, I may have element 1 be ["narration", "A bustling hospital hallway. A man named Nathan faces a daunting line."] 
@@ -281,13 +280,13 @@ def make_background_audio(voiceover):
         [5]'fun or jazzy', [6]'nostalgic', [7]'sad and rainy', [8]'gentle and uplifting', [9]'technology or mysterious and intriguing',
         [10]'upbeat and funky', [11]'upbeat and lighthearted and happy', [12]'extremely mysterious'. Give the answer as a single digit
         based on the given song indexes. Do not give any answer other than a single digit without brackets.
-        For example, your output can be 3"""
+        For example, your output can be 3. output:"""
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.5,
-        max_tokens=256 
+
+    response = openai.Completion.create(
+    engine="text-davinci-003",
+    prompt=prompt,
+    max_tokens=2000
     )
 
     message = response['choices'][0]['text']
@@ -401,9 +400,11 @@ if __name__ == "__main__":
 
     # final_data_list = [{'transcript': 'What was that?', 'scene_descriptions': [{'items': ['person'], 'description': 'a man is sitting down on a laptop'}, {'items': ['person'], 'description': 'a man with brown hair'}, {'items': [], 'description': 'a blur of a person in a room'}, {'items': ['person'], 'description': 'a man with a blue shirt'}, {'items': ['person', 'person'], 'description': 'a man sitting on a chair'}]}, {'transcript': 'Okay, guys, we are at 30 seconds of video. And wait, how long is the movie going to be?', 'scene_descriptions': [{'items': [], 'description': 'a large machine is moving through a factory'}, {'items': [], 'description': 'a blur of a person walking down a hallway'}, {'items': ['person', 'person'], 'description': 'two people sitting in chairs in a room'}, {'items': ['person', 'person', 'laptop'], 'description': 'a group of people sitting around a table with laptops'}, {'items': [], 'description': 'a blur of people on a train'}]}, {'transcript': "Oh, that's pretty delicious. Bubble, what do you have to say?", 'scene_descriptions': [{'items': [], 'description': "a close up of a person's face with a yellow and black hair"}, {'items': ['person'], 'description': 'a person is cutting a cake on a table'}, {'items': ['teddy bear'], 'description': 'a person is holding a stuffed animal'}, {'items': ['teddy bear'], 'description': 'a stuffed animal is being fed by a person'}, {'items': ['person'], 'description': 'a man is seen in the middle of a restaurant'}]}, {'transcript': 'Thank you for watching the video.', 'scene_descriptions': [{'items': [], 'description': 'a long hallway with a blue and yellow line on the floor'}, {'items': [], 'description': 'a blur of a door in a hallway'}, {'items': [], 'description': 'a person is holding a knife in their hand'}, {'items': [], 'description': 'a bed with a yellow pillow and a white wall'}, {'items': [], 'description': 'a door is open in an office'}]}, {'transcript': "Thank you for watching and don't forget to subscribe!", 'scene_descriptions': [{'items': ['refrigerator'], 'description': 'a white wall with a sign on it'}, {'items': [], 'description': 'a man is walking down a hallway in an office'}, {'items': [], 'description': 'a long hallway with a door and a person walking down the hallway'}, {'items': ['refrigerator', 'refrigerator'], 'description': 'a long hallway with a black floor and white walls'}, {'items': [], 'description': 'a hallway with a wooden floor and a yellow door'}]}, {'transcript': "That's like the one place you shouldn't be. There was no one in there. Bro, that's like actually the worst.", 'scene_descriptions': [{'items': ['person', 'person', 'person'], 'description': 'a group of people sitting in a room'}, {'items': ['laptop', 'person'], 'description': 'a group of people sitting around a laptop'}, {'items': ['person', 'person', 'laptop'], 'description': 'a man sitting on a chair with a laptop'}, {'items': ['cell phone'], 'description': 'a blur of people on an airplane'}, {'items': ['person'], 'description': 'a man is seen in the middle of a room with a woman in the middle'}]}]
 
-    response = openai.Completion.create(engine="text-davinci-003",prompt=  str(json.dumps(final_data_list)) + "\n" + prompt,max_tokens=1500,presence_penalty=1)
+    response = openai.Completion.create(engine="text-davinci-003",prompt=  str(json.dumps(final_data_list)) + "\n" + prompt,max_tokens=2000,presence_penalty=1)
     #prompt + "\n\n" + str(len(final_data_list)) + "\n" + str(json.dumps(final_data_list))
     message = response['choices'][0]['text']
+    if message[-2:] != "]]":
+        message+=']'
     print(message)
 
     voiceovers = [e[1] if e[0]=="narration" else "NOTHING" for e in eval(message)]
