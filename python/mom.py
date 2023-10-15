@@ -507,7 +507,7 @@ def generate_video():
     
     input_folder = "../MOMents"
     output_folder = "../MOM10s"
-    split_into_10s(input_folder, output_folder)
+    # split_into_10s(input_folder, output_folder)
 
     # curr_clip = "MOM10s/clip_6.mp4"
 
@@ -569,7 +569,7 @@ def generate_video():
         if audio_clip:
             video_clip = video_clip.set_audio(audio_clip)
         
-        video_clip = add_sound_effects(video_clip, final_data)
+        video_clip = add_sound_effects(video_clip, " ".join(voiceover))
 
         clips.append(video_clip)
 
@@ -591,4 +591,4 @@ def generate_video():
 
 
 
-# generate_video()
+generate_video()
