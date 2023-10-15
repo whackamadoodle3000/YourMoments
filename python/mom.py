@@ -12,15 +12,15 @@ from transformers import BlipProcessor, BlipForConditionalGeneration
 import openai
 import moviepy.editor as mp #for mov to mp3 conversion
 from deepface import DeepFace
-import PIL
 import torch
 import json
 from pydub import AudioSegment
+from random import randint
+from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips, CompositeAudioClip
 from moviepy.audio.fx.all import volumex
 
-with open("../eleven.pass", 'r') as file:
+with open("..\\eleven.pass", 'r') as file:
     set_api_key(file.read())
-
 
 # Get device
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -137,7 +137,7 @@ def get_top_objects(frame_results, top_n=3, confidence_threshold=0.8):
 
 
 
-def extract_frames(video_path, frame_interval=120):
+def extract_frames(video_path, output_folder, frame_interval=120):
     # speech to text
 
     input_mov_file = video_path
@@ -208,6 +208,21 @@ def extract_frames(video_path, frame_interval=120):
     return final_data
 
 def split_into_10s(input_folder, output_folder):
+    
+    # clear output folder
+    import os, shutil
+    folder = output_folder
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))
+    
+    # parse in
     newest_file = find_newest_file(input_folder)
 
     clip = VideoFileClip(newest_file)
@@ -307,11 +322,11 @@ def make_background_audio(voiceover):
                 12: 'very_mysterious.mp3'}
 
     #make a copy of the song you want and name it background_music.mp3
-    background_audio = AudioSegment.from_mp3("../audio_assets/"+song_dict.get(genre_key))
-    background_audio.export("background_music.mp3", format="mp3")
-
-    #TODO loop if the song is too short? 
-    return
+    print("../audio_assets/"+song_dict.get(genre_key))
+    print(os.path.exists("../audio_assets/"+song_dict.get(genre_key)))
+    background_audio = AudioFileClip(f"../audio_assets/"+song_dict.get(genre_key))
+    # background_audio.export("background_music.mp3", format="mp3")
+    return background_audio
 
 
 def get_files(output_folder):
@@ -326,6 +341,9 @@ def get_files(output_folder):
         # unconditional image captioning
         inputs = processor(raw_image, return_tensors="pt")
 
+        # out = blip_model.generate(**inputs)
+        # desc = processor.decode(out[0], skip_special_tokens=True)
+        # gpt_query += f"{i}: {desc}\n"
 
         out = blip_model.generate(**inputs)
         desc = processor.decode(out[0], skip_special_tokens=True)
@@ -374,14 +392,55 @@ def get_files(output_folder):
     return files
 
 
+def add_sound_effects(video_clip, final_data):
+    # video_clip = VideoFileClip("../MOM10s/clip_1.mp4")
+    gpt_query = """
+    have a 10 second video clip which has been proccessed by CV and ML stuff into this. 
+    there is a transcript of what was said, and descriptions of what is detected by the yolo model and image captioner ever 2 seconds. 
+    """
+    gpt_query += "\n" + str(final_data) + "\n"
+    gpt_query += """
+    Now here is a list of some sound effects to choose from:
+    """
+    
+    gpt_query += "\n".join(os.listdir("../audio_assets/sfx"))
 
+    gpt_query += "Based on the given information, what sound effect should I use to complement the video? Respond with the filename ONLY, and nothing else."
 
+    print(gpt_query)
 
+    # Make a call to the OpenAI API
+    response = openai.Completion.create(
+    engine="text-davinci-003",
+    prompt=gpt_query,
+    max_tokens=3000
+    )
 
-if __name__ == "__main__":
-    input_folder = "../MOMents"
-    output_folder = "../MOM10s"
-    # split_into_10s(input_folder, output_folder)
+    # Extract the generated message
+    message = response['choices'][0]['text']
+    message = message.strip()
+    print(f"../audio_assets/sfx/{message}")
+
+    try:
+        sound_effect = AudioFileClip(f'../audio_assets/sfx/{message}')
+    except:
+        sound_effect = AudioFileClip(f'../audio_assets/sfx/jazz.mp3')
+        
+    sound_effect = volumex(sound_effect, 0.5)
+    final_audio = CompositeAudioClip([video_clip.audio, sound_effect.set_start(randint(0,5))]) #replac
+    video_clip = video_clip.set_audio(final_audio)
+        
+
+    # video_clip.write_videofile("static/test.mp4")
+    return video_clip    
+
+def generate_video():
+    
+    print("here")
+    
+    input_folder = "..\\MOMents"
+    output_folder = "..\\MOM10s"
+    split_into_10s(input_folder, output_folder)
 
     # curr_clip = "MOM10s/clip_6.mp4"
 
@@ -392,7 +451,7 @@ if __name__ == "__main__":
     for curr_clip in interesting_files:
         curr_clip = output_folder + "/" +curr_clip
         if os.path.exists(curr_clip):
-            final_data = extract_frames(curr_clip)
+            final_data = extract_frames(curr_clip, output_folder)
             final_data_list.append(final_data)
     
     print(final_data_list)
@@ -442,16 +501,17 @@ if __name__ == "__main__":
         video_clip = VideoFileClip(curr_clip)
         if audio_clip:
             video_clip = video_clip.set_audio(audio_clip)
+        
+        video_clip = add_sound_effects(video_clip, final_data)
 
         clips.append(video_clip)
 
     final_clip = concatenate_videoclips(clips)
     
     #adding background audio
-    make_background_audio(message)
-    audio_background = mp.AudioFileClip('background_music.mp3') #background audio
+    audio_background = make_background_audio(message) #background audio
     audio_background = audio_background.subclip(0, min([60,audio_background.duration]))
-    audio_background = volumex(audio_background, 0.2)
-    final_audio = mp.CompositeAudioClip([final_clip.audio, audio_background]) #add in background audio to create final audio
+    audio_background = volumex(audio_background, 0.4)
+    final_audio = CompositeAudioClip([final_clip.audio, audio_background]) #add in background audio to create final audio
     final_clip = final_clip.set_audio(final_audio) #set audio to final audio
-    final_clip.write_videofile("running8.mp4")
+    final_clip.write_videofile("static/running5.mp4")

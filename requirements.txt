@@ -6,5 +6,5 @@ ultralytics
 transformers[torch]
 openai
 deepface
-TTS
-elevenlabs
+elevenlabs  
+pydub

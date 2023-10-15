@@ -1,6 +1,9 @@
 from distutils.log import debug 
 from fileinput import filename 
 from flask import Flask, render_template, request  
+import os
+import mom
+
 app = Flask(__name__)   
   
 @app.route('/')   
@@ -18,6 +21,14 @@ def uploadphoto():
                 f.save("../shrockers/" + f.filename)   
             else:
                 f.save("../MOMents/" + f.filename)
+        
+        print("here")
+        
+        mom.generate_video()
+        # with open("mom.py", 'r') as file:
+        #     python_code = file.read()
+        #     exec(python_code)
+        # os.system("python mom.py")
         return render_template("confirmation.html")  
 if __name__ == '__main__':   
     app.run(debug=True)
