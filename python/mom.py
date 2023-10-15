@@ -71,7 +71,7 @@ PROMPT:
 
 prompt = """
 
-we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Consider drama such as a divorce, a murder, a spy noir film, a regal ball, an affair, or a robbery happening. However, don't choose more than one and overcomplicate the story. Also, you DO NOT always have to choose one. Note that the storyline MUST be coherent and very easy to follow.  Include transition words when possible. Each scene has to transition to the next scene in a way that makes sense.
+we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Consider drama such as a divorce, a murder, a spy noir film, a regal ball, an affair, or a robbery, easter egg hunt, coding homework, swimming, hackathon, eating your mom, dying, living, exploding, barbenheimer, petting cats, smelling flowers, wearing hard wear, baking bread, yeast, construction working, vermeer, skydiving, walking on grass, touching grass, doing your mom, happening. However, don't choose more than one and overcomplicate the story. Also, you DO NOT always have to choose one. Note that the storyline MUST be coherent and very easy to follow.  Include transition words when possible. Each scene has to transition to the next scene in a way that makes sense.
 Here are more concrete limitations:
 For the 3 scenes that have the 3rd person narration, they should only be 1-2 sentences long.
 For all 6 scenes, format your output for each scene as an element, inside of a Python list of 6 elements. Each element will have 2 elements nested inside, which will be NARRATION or TRANSCRIPT and then the actual text. For example, I may have element 1 be ["narration", "A bustling hospital hallway. A man named Nathan faces a daunting line."] 
@@ -358,23 +358,26 @@ def apply_general_filter(video_clip, color, original_weight, lum, blackwhite): #
 
 def choose_filter(voiceover):
     voiceover = ' '.join(voiceover)
+    
 
     prompt = voiceover + """\nGiven the above text transcripts, analyze the situation and tone to find the most appropriate filter for the video.
         Available adjectives are [1]'spooky mystery y2k', [2]'royal historical ball', [3]'dark night', [4]'faded memories',
         [5]'dirty yellow' [6]'aesthetic film' [7]'spy movie noir'. Give the answer as a single digit
         based on the given song indexes. Do not give any answer other than a single digit without brackets.
         For example, your output can be 3. output:"""
+    
+    response = openai.Completion.create(
+    engine="text-davinci-003",
+    prompt=prompt,
+    max_tokens=200
+    )
 
     message = response['choices'][0]['text']
     
     genre_key = int(''.join([e for e in message if e in '1234567890']))
     genre_key = genre_key if genre_key < 7 and genre_key > 0 else 6
 
-    response = openai.Completion.create(
-    engine="text-davinci-003",
-    prompt=prompt,
-    max_tokens=200
-    )
+
 
     filter_dict = {1: [cv2.COLORMAP_DEEPGREEN,0.6,0.6,False],
                 2: [cv2.COLORMAP_OCEAN,0.6,0.3,False],
@@ -490,7 +493,7 @@ def add_sound_effects(video_clip, final_data):
     except:
         sound_effect = AudioFileClip(f'../audio_assets/sfx/jazz.mp3')
         
-    sound_effect = volumex(sound_effect, 0.5)
+    sound_effect = volumex(sound_effect, 0.25)
     final_audio = CompositeAudioClip([video_clip.audio, sound_effect.set_start(randint(0,5))]) #replac
     video_clip = video_clip.set_audio(final_audio)
         
@@ -504,7 +507,7 @@ def generate_video():
     
     input_folder = "../MOMents"
     output_folder = "../MOM10s"
-    split_into_10s(input_folder, output_folder)
+    # split_into_10s(input_folder, output_folder)
 
     # curr_clip = "MOM10s/clip_6.mp4"
 
@@ -575,7 +578,7 @@ def generate_video():
     #adding background audio
     audio_background = make_background_audio(message) #background audio
     audio_background = audio_background.subclip(0, min([60,audio_background.duration]))
-    audio_background = volumex(audio_background, 0.4)
+    audio_background = volumex(audio_background, 0.2)
     final_audio = CompositeAudioClip([final_clip.audio, audio_background]) #add in background audio to create final audio
     final_clip = final_clip.set_audio(final_audio) #set audio to final audio
 
@@ -586,3 +589,6 @@ def generate_video():
 
     final_clip.write_videofile("static/running5.mp4")
 
+
+
+generate_video()
