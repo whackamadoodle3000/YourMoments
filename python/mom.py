@@ -102,7 +102,7 @@ def extract_frames(video_path, frame_interval=120):
 
     print(transcript)
 
-    if len(transcript) < 40:
+    if len(transcript) < 60:
         cap = cv2.VideoCapture(video_path)
 
         frame_count = 0
@@ -171,7 +171,7 @@ def split_into_10s(input_folder, output_folder):
         start_time = i * 10
         end_time = (i + 1) * 10
         subclip = clip.subclip(start_time, end_time)
-        subclip.write_videofile(os.path.join(output_folder_path, f"1_clip_{i + 1}.mp4"), codec="libx264", threads=4)
+        subclip.write_videofile(os.path.join(output_folder_path, f"clip_{i + 1}.mp4"), codec="libx264", threads=4)
 
     clip.reader.close()
     clip.audio.reader.close_proc() 
@@ -215,42 +215,42 @@ def get_frames(folder):
     return image_list
 
 def get_files(output_folder):
-    gpt_query = ""
-    for i,image in enumerate(get_frames(output_folder)):
+    # gpt_query = ""
+    # for i,image in enumerate(get_frames(output_folder)):
 
-        raw_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #     raw_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        face_id=None
-        # face_id = id_face(Image.fromarray(image), "shrockers/")
+    #     face_id=None
+    #     # face_id = id_face(Image.fromarray(image), "shrockers/")
 
-        # unconditional image captioning
-        inputs = processor(raw_image, return_tensors="pt")
+    #     # unconditional image captioning
+    #     inputs = processor(raw_image, return_tensors="pt")
 
 
-        out = blip_model.generate(**inputs)
-        desc = processor.decode(out[0], skip_special_tokens=True)
-        gpt_query += f"{i}: {desc}\n"
+    #     out = blip_model.generate(**inputs)
+    #     desc = processor.decode(out[0], skip_special_tokens=True)
+    #     gpt_query += f"{i}: {desc}\n"
 
-    gpt_query += "\n\n give me a comma separated list of numbers of the top 3 most interesting descriptions. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS:  1,4,6"
+    # gpt_query += "\n\n give me a comma separated list of numbers of the top 3 most interesting descriptions. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS:  1,4,6"
 
-#     gpt_query = """0: a room with a carpet that has been painted blue
-# 1: a man and woman sitting in a chair
-# 2: a man in a suit and tie is standing in a room
-# 3: a room with a wooden floor and a white wall
-# 4: a man is walking through an office lobby
-# 5: a man sitting in a chair with a laptop
-# 6: a blur of people walking down a street
-# 7: a man in a blue shirt is standing in front of a computer
-# 8: a black and white rug
-# 9: a door is open in an office
-# 10: two people sitting in a room with computers
-# 11: a man sitting on a chair in a room
-# 12: a blur of a person walking down a street
-# 13: a man sitting at a table in a restaurant
-# 14: a man with a blue jacket
-# 15: a man is walking up the stairs in a building
-# 16: a blur of people on a train
-# 17: a man holding a stuffed animal
+    gpt_query = """0: a man in a blue shirt
+1: a man in a white shirt
+2: a man in a blue shirt is standing in a room
+3: a man is walking through a hallway in a building
+4: a man in a blue shirt and white pants
+5: a man in a gray shirt
+6: a man with curly hair
+7: a man in a gray shirt and black pants
+8: a blur of people walking through a building
+9: a white desk with a monitor on it
+10: a man in a room with a guitar
+11: a man in a white shirt is walking up a stair
+12: a blur of people walking down a hospital hallway
+13: a group of people are walking through a building
+14: a group of people are walking around a room
+15: a man in a gray sweater
+16: a blur of a person walking down a hospital hallway
+17: a young boy is walking down a hallway
 
 
 #  give me a comma separated list of numbers of the top 6 most interesting descriptions that make a good storyline together. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS WHERE <number> is a number like 1 or 2 or 3 etc:  <number>,<number>,<number>,<number>,<number>,<number>
@@ -261,7 +261,7 @@ def get_files(output_folder):
     response = openai.Completion.create(
     engine="text-davinci-002",
     prompt=gpt_query,
-    max_tokens=1000
+    max_tokens=5000
     )
 
     # Extract the generated message
@@ -280,7 +280,7 @@ def get_files(output_folder):
 if __name__ == "__main__":
     input_folder = "MOMents"
     output_folder = "MOM10s"
-    split_into_10s(input_folder, output_folder)
+    # split_into_10s(input_folder, output_folder)
 
     # curr_clip = "MOM10s/clip_6.mp4"
 
@@ -292,7 +292,7 @@ if __name__ == "__main__":
         final_data = extract_frames(curr_clip)
         audio_clip = 0
 
-        if len(final_data["transcript"]) < 40:
+        if len(final_data["transcript"]) < 60:
             # Make a call to the OpenAI API
             response = openai.Completion.create(
             engine="text-davinci-002",
