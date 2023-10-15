@@ -2,6 +2,7 @@ from elevenlabs import set_api_key,generate,save
 import os
 # os.environ["IMAGEIO_FFMPEG_EXE"] = "/usr/bin/ffmpeg"
 from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.editor import *
 import glob
 import cv2
 from pathlib import Path
@@ -15,11 +16,9 @@ import PIL
 import torch
 import json
 from pydub import AudioSegment
+from moviepy.audio.fx.all import volumex
 
-from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
-
-
-with open("python/eleven.pass", 'r') as file:
+with open("../eleven.pass", 'r') as file:
     set_api_key(file.read())
 
 
@@ -91,7 +90,7 @@ output:
 """
 
 
-with open("python/openai.pass", 'r') as file:
+with open("../openai.pass", 'r') as file:
     openai.api_key = file.read()
 
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
@@ -308,7 +307,7 @@ def make_background_audio(voiceover):
                 12: 'very_mysterious.mp3'}
 
     #make a copy of the song you want and name it background_music.mp3
-    background_audio = AudioSegment.from_mp3("audio_assets/"+song_dict.get(genre_key))
+    background_audio = AudioSegment.from_mp3("../audio_assets/"+song_dict.get(genre_key))
     background_audio.export("background_music.mp3", format="mp3")
 
     #TODO loop if the song is too short? 
@@ -380,8 +379,8 @@ def get_files(output_folder):
 
 
 if __name__ == "__main__":
-    input_folder = "MOMents"
-    output_folder = "MOM10s"
+    input_folder = "../MOMents"
+    output_folder = "../MOM10s"
     # split_into_10s(input_folder, output_folder)
 
     # curr_clip = "MOM10s/clip_6.mp4"
@@ -452,6 +451,7 @@ if __name__ == "__main__":
     make_background_audio(message)
     audio_background = mp.AudioFileClip('background_music.mp3') #background audio
     audio_background = audio_background.subclip(0, min([60,audio_background.duration]))
+    audio_background = volumex(audio_background, 0.2)
     final_audio = mp.CompositeAudioClip([final_clip.audio, audio_background]) #add in background audio to create final audio
     final_clip = final_clip.set_audio(final_audio) #set audio to final audio
     final_clip.write_videofile("running8.mp4")
