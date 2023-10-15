@@ -14,7 +14,7 @@ from deepface import DeepFace
 import PIL
 import torch
 import json
-from TTS.api import TTS
+from pydub import AudioSegment
 
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
 
@@ -71,13 +71,13 @@ PROMPT:
 
 prompt = """
 
-we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Consider drama such as a divorce happening. Note that the storyline MUST be coherent and very easy to follow. Each scene has to transition to the next scene in a way that makes sense.
+we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Note that the storyline MUST be coherent and very easy to follow. Each scene has to transition to the next scene in a way that makes sense.
 
 Here are more concrete limitations:
 For the 3 scenes that have the 3rd person narration, they should only be 1-2 sentences long.
 For all 6 scenes, format your output for each scene as an element, inside of a Python list of 6 elements. Each element will have 2 elements nested inside, which will be NARRATION or TRANSCRIPT and then the actual text. For example, I may have element 1 be ["narration", "A bustling hospital hallway. A man named Nathan faces a daunting line."] 
 
-Format output as follows:
+Format output as follows, WITH CORRECT PYTHON SYNTAX FOR A NESTED LIST:
 [["xxx", "xxx"],
     ["xxx", "xxx"],
     ["xxx", "xxx"],
@@ -272,6 +272,50 @@ def get_frames(folder):
 
     return image_list
 
+def make_background_audio(voiceover):
+    #TODO only using cinematic songs, no other genres
+    voiceover = ' '.join(voiceover)
+
+    prompt = voiceover + """\nGiven the above text descriptions, analyze the situation and tone to find the most appropriate adjective.
+        Available adjectives are [1]'action', [2]'reflective and happy', [3]'creepy or mischevious', [4]'energetic!',
+        [5]'fun or jazzy', [6]'nostalgic', [7]'sad and rainy', [8]'gentle and uplifting', [9]'technology or mysterious and intriguing',
+        [10]'upbeat and funky', [11]'upbeat and lighthearted and happy', [12]'extremely mysterious'. Give the answer as a single digit
+        based on the given song indexes. Do not give any answer other than a single digit without brackets.
+        For example, your output can be 3"""
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.5,
+        max_tokens=256 
+    )
+
+    message = response['choices'][0]['text']
+    
+    genre_key = int(''.join([e for e in message if e in '1234567890']))
+    genre_key = genre_key if genre_key < 13 and genre_key > 0 else 6
+
+    song_dict = {1: 'action.mp3',
+                2: 'happy_reflective.mp3',
+                3: 'creepy_mischeivious.mp3',
+                4: 'energetic.mp3',
+                5: 'fun_jazz.mp3',
+                6: 'nostalgic.mp3',
+                7: 'sad_rainy.mp3',
+                8: 'gentle_uplifting',
+                9: 'technology_mystery_intrigue_upbeat.mp3',
+                10: 'upbeat_funky.mp3',
+                11: 'upbeat_lighthearted_happy.mp3',
+                12: 'very_mysterious.mp3'}
+
+    #make a copy of the song you want and name it background_music.mp3
+    background_audio = AudioSegment.from_mp3(song_dict.get(genre_key))
+    background_audio.export("background_music.mp3", format="mp3")
+
+    #TODO loop if the song is too short? 
+    return
+
+
 def get_files(output_folder):
     gpt_query = ""
     for i,image in enumerate(get_frames(output_folder)):
@@ -317,7 +361,7 @@ def get_files(output_folder):
 
     # Make a call to the OpenAI API
     response = openai.Completion.create(
-    engine="text-davinci-002",
+    engine="text-davinci-003",
     prompt=gpt_query,
     max_tokens=2000
     )
@@ -327,6 +371,7 @@ def get_files(output_folder):
     print(message)
 
     numbers = [''.join([r for r in e if r in '1234567890']) for e in message.split(',')]
+    print(numbers)
     files = [f"clip_{i}.mp4" for i in numbers if i]
     return files
 
@@ -348,15 +393,16 @@ if __name__ == "__main__":
     clips = []
     for curr_clip in interesting_files:
         curr_clip = output_folder + "/" +curr_clip
-    #     final_data = extract_frames(curr_clip)
-    #     final_data_list.append(final_data)
+        if os.path.exists(curr_clip):
+            final_data = extract_frames(curr_clip)
+            final_data_list.append(final_data)
     
-    # print(final_data_list)
+    print(final_data_list)
 
-    final_data_list = [{'transcript': 'What was that?', 'scene_descriptions': [{'items': ['person'], 'description': 'a man is sitting down on a laptop'}, {'items': ['person'], 'description': 'a man with brown hair'}, {'items': [], 'description': 'a blur of a person in a room'}, {'items': ['person'], 'description': 'a man with a blue shirt'}, {'items': ['person', 'person'], 'description': 'a man sitting on a chair'}]}, {'transcript': 'Okay, guys, we are at 30 seconds of video. And wait, how long is the movie going to be?', 'scene_descriptions': [{'items': [], 'description': 'a large machine is moving through a factory'}, {'items': [], 'description': 'a blur of a person walking down a hallway'}, {'items': ['person', 'person'], 'description': 'two people sitting in chairs in a room'}, {'items': ['person', 'person', 'laptop'], 'description': 'a group of people sitting around a table with laptops'}, {'items': [], 'description': 'a blur of people on a train'}]}, {'transcript': "Oh, that's pretty delicious. Bubble, what do you have to say?", 'scene_descriptions': [{'items': [], 'description': "a close up of a person's face with a yellow and black hair"}, {'items': ['person'], 'description': 'a person is cutting a cake on a table'}, {'items': ['teddy bear'], 'description': 'a person is holding a stuffed animal'}, {'items': ['teddy bear'], 'description': 'a stuffed animal is being fed by a person'}, {'items': ['person'], 'description': 'a man is seen in the middle of a restaurant'}]}, {'transcript': 'Thank you for watching the video.', 'scene_descriptions': [{'items': [], 'description': 'a long hallway with a blue and yellow line on the floor'}, {'items': [], 'description': 'a blur of a door in a hallway'}, {'items': [], 'description': 'a person is holding a knife in their hand'}, {'items': [], 'description': 'a bed with a yellow pillow and a white wall'}, {'items': [], 'description': 'a door is open in an office'}]}, {'transcript': "Thank you for watching and don't forget to subscribe!", 'scene_descriptions': [{'items': ['refrigerator'], 'description': 'a white wall with a sign on it'}, {'items': [], 'description': 'a man is walking down a hallway in an office'}, {'items': [], 'description': 'a long hallway with a door and a person walking down the hallway'}, {'items': ['refrigerator', 'refrigerator'], 'description': 'a long hallway with a black floor and white walls'}, {'items': [], 'description': 'a hallway with a wooden floor and a yellow door'}]}, {'transcript': "That's like the one place you shouldn't be. There was no one in there. Bro, that's like actually the worst.", 'scene_descriptions': [{'items': ['person', 'person', 'person'], 'description': 'a group of people sitting in a room'}, {'items': ['laptop', 'person'], 'description': 'a group of people sitting around a laptop'}, {'items': ['person', 'person', 'laptop'], 'description': 'a man sitting on a chair with a laptop'}, {'items': ['cell phone'], 'description': 'a blur of people on an airplane'}, {'items': ['person'], 'description': 'a man is seen in the middle of a room with a woman in the middle'}]}]
+    # final_data_list = [{'transcript': 'What was that?', 'scene_descriptions': [{'items': ['person'], 'description': 'a man is sitting down on a laptop'}, {'items': ['person'], 'description': 'a man with brown hair'}, {'items': [], 'description': 'a blur of a person in a room'}, {'items': ['person'], 'description': 'a man with a blue shirt'}, {'items': ['person', 'person'], 'description': 'a man sitting on a chair'}]}, {'transcript': 'Okay, guys, we are at 30 seconds of video. And wait, how long is the movie going to be?', 'scene_descriptions': [{'items': [], 'description': 'a large machine is moving through a factory'}, {'items': [], 'description': 'a blur of a person walking down a hallway'}, {'items': ['person', 'person'], 'description': 'two people sitting in chairs in a room'}, {'items': ['person', 'person', 'laptop'], 'description': 'a group of people sitting around a table with laptops'}, {'items': [], 'description': 'a blur of people on a train'}]}, {'transcript': "Oh, that's pretty delicious. Bubble, what do you have to say?", 'scene_descriptions': [{'items': [], 'description': "a close up of a person's face with a yellow and black hair"}, {'items': ['person'], 'description': 'a person is cutting a cake on a table'}, {'items': ['teddy bear'], 'description': 'a person is holding a stuffed animal'}, {'items': ['teddy bear'], 'description': 'a stuffed animal is being fed by a person'}, {'items': ['person'], 'description': 'a man is seen in the middle of a restaurant'}]}, {'transcript': 'Thank you for watching the video.', 'scene_descriptions': [{'items': [], 'description': 'a long hallway with a blue and yellow line on the floor'}, {'items': [], 'description': 'a blur of a door in a hallway'}, {'items': [], 'description': 'a person is holding a knife in their hand'}, {'items': [], 'description': 'a bed with a yellow pillow and a white wall'}, {'items': [], 'description': 'a door is open in an office'}]}, {'transcript': "Thank you for watching and don't forget to subscribe!", 'scene_descriptions': [{'items': ['refrigerator'], 'description': 'a white wall with a sign on it'}, {'items': [], 'description': 'a man is walking down a hallway in an office'}, {'items': [], 'description': 'a long hallway with a door and a person walking down the hallway'}, {'items': ['refrigerator', 'refrigerator'], 'description': 'a long hallway with a black floor and white walls'}, {'items': [], 'description': 'a hallway with a wooden floor and a yellow door'}]}, {'transcript': "That's like the one place you shouldn't be. There was no one in there. Bro, that's like actually the worst.", 'scene_descriptions': [{'items': ['person', 'person', 'person'], 'description': 'a group of people sitting in a room'}, {'items': ['laptop', 'person'], 'description': 'a group of people sitting around a laptop'}, {'items': ['person', 'person', 'laptop'], 'description': 'a man sitting on a chair with a laptop'}, {'items': ['cell phone'], 'description': 'a blur of people on an airplane'}, {'items': ['person'], 'description': 'a man is seen in the middle of a room with a woman in the middle'}]}]
 
-    response = openai.Completion.create(engine="text-davinci-003",prompt=  prompt + "\n\n" + str(len(final_data_list)) + "\n" + str(json.dumps(final_data_list)),max_tokens=1000,presence_penalty=1)
-
+    response = openai.Completion.create(engine="text-davinci-003",prompt=  str(json.dumps(final_data_list)) + "\n" + prompt,max_tokens=1500,presence_penalty=1)
+    #prompt + "\n\n" + str(len(final_data_list)) + "\n" + str(json.dumps(final_data_list))
     message = response['choices'][0]['text']
     print(message)
 
@@ -375,7 +421,7 @@ if __name__ == "__main__":
         audio_clip = 0
         curr_clip = output_folder + "/" + interesting_files[index]
 
-        if "NOTHING" not in voiceover and index not in no_voiceover:
+        if "NOTHING" not in voiceover: #and index not in no_voiceover:
             audio = generate(
             text=voiceover,
             voice="Harry",
@@ -399,4 +445,10 @@ if __name__ == "__main__":
         clips.append(video_clip)
 
     final_clip = concatenate_videoclips(clips)
+    
+    #adding background audio
+    make_background_audio(message)
+    audio_background = mp.AudioFileClip('audio_assets/music/background_music.mp3') #background audio
+    final_audio = mp.CompositeAudioClip([final_clip.audio, audio_background]) #add in background audio to create final audio
+    final_clip = final_clip.set_audio(final_audio) #set audio to final audio
     final_clip.write_videofile("running8.mp4")
