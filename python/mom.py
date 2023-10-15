@@ -314,6 +314,42 @@ def make_background_audio(voiceover):
     return
 
 
+def choose_filter(voiceover):
+    voiceover = ' '.join(voiceover)
+
+    prompt = voiceover + """\nGiven the above text transcripts, analyze the situation and tone to find the most appropriate filter for the video.
+        Available adjectives are [1]'black and white', [2]'mexico', [3]'twilight', [4]'neon',
+        [5]'faded' [6]'no filter'. Give the answer as a single digit
+        based on the given song indexes. Do not give any answer other than a single digit without brackets.
+        For example, your output can be 3. output:"""
+
+    message = response['choices'][0]['text']
+    
+    genre_key = int(''.join([e for e in message if e in '1234567890']))
+    genre_key = genre_key if genre_key < 7 and genre_key > 0 else 6
+
+    response = openai.Completion.create(
+    engine="text-davinci-003",
+    prompt=prompt,
+    max_tokens=200
+    )
+
+    filter_dict = {1: [],
+                2: [],
+                3: [],
+                4: [],
+                5: [],
+                6: []}
+    return filter_dict[genre_key]
+    
+
+
+
+
+
+
+
+
 def get_files(output_folder):
     gpt_query = ""
     for i,image in enumerate(get_frames(output_folder)):
