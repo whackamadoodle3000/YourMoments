@@ -71,7 +71,11 @@ PROMPT:
 
 prompt = """
 
-we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Consider drama such as a divorce, a murder, a spy noir film, a regal ball, an affair, or a robbery, easter egg hunt, coding homework, swimming, hackathon, eating your mom, dying, living, exploding, barbenheimer, petting cats, smelling flowers, wearing hard wear, baking bread, yeast, construction working, vermeer, skydiving, walking on grass, touching grass, doing your mom, happening. However, don't choose more than one and overcomplicate the story. Also, you DO NOT always have to choose one. Note that the storyline MUST be coherent and very easy to follow.  Include transition words when possible. Each scene has to transition to the next scene in a way that makes sense.
+we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Consider drama such as a divorce, a murder, a spy noir film, an affair, or a robbery, easter egg hunt, coding homework, swimming, hackathon, eating your mom, dying, living, exploding, barbenheimer, petting cats, smelling flowers, wearing hard wear, baking bread, yeast, construction working, vermeer, skydiving, walking on grass, touching grass, doing your mom, happening. However, don't choose more than one and overcomplicate the story.
+Also, you DO NOT always have to choose one!! Make up your own creative scenario.
+However, note that the storyline MUST ALWAYS be coherent. The storyline should be very easy to follow.
+Include transition words when possible. Each scenario or scene has to transition to the next scene in a way that makes sense.
+The story must have CONTINUITY so remember not to include too many scenarios at once.
 Here are more concrete limitations:
 For the 3 scenes that have the 3rd person narration, they should only be 1-2 sentences long.
 For all 6 scenes, format your output for each scene as an element, inside of a Python list of 6 elements. Each element will have 2 elements nested inside, which will be NARRATION or TRANSCRIPT and then the actual text. For example, I may have element 1 be ["narration", "A bustling hospital hallway. A man named Nathan faces a daunting line."] 
@@ -287,7 +291,6 @@ def get_frames(folder):
     return image_list
 
 def make_background_audio(voiceover):
-    #TODO only using cinematic songs, no other genres
     voiceover = ' '.join(voiceover)
 
     prompt = voiceover + """\nGiven the above text descriptions, analyze the situation and tone to find the most appropriate adjective.
@@ -507,7 +510,7 @@ def generate_video():
     
     input_folder = "../MOMents"
     output_folder = "../MOM10s"
-    split_into_10s(input_folder, output_folder)
+    #split_into_10s(input_folder, output_folder) #TODO uncomment if using new video
 
     # curr_clip = "MOM10s/clip_6.mp4"
 
@@ -590,5 +593,4 @@ def generate_video():
     final_clip.write_videofile("static/running5.mp4")
 
 
-
-# generate_video()
+generate_video()
