@@ -13,6 +13,7 @@ import moviepy.editor as mp #for mov to mp3 conversion
 from deepface import DeepFace
 import PIL
 import torch
+import json
 from TTS.api import TTS
 
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
@@ -27,10 +28,67 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 DEFAULT_FILENAME = "tmp.jpg"
 
-prompt = """
+old_prompt = """
  have a 10 second video clip which has been proccessed by CV and ML stuff into this. 
  there is a transcript of what was said, and descriptions of what is detected by the yolo model and image captioner ever 2 seconds. 
  generate a cohesive funny story voiceover of what is happening to play over the 10s clip. it needs to be a very brief voiceover up to only 34 words
+"""
+
+#  have a series of 10 second video clips which have been proccessed by CV and ML stuff into list of data for each clip. 
+#  for each clip, there is a transcript of what was said, and descriptions of what is detected by the yolo model and image captioner ever 2 seconds. 
+#  your task is to decide whether to 3rd person voiceover each clip, in which case you generate a transcript, or whether to leave the existing voice in place, in which case you put NOTHING.
+#  you will generate a cohesive funny storyline of what is happening to decide this.
+
+#  you will output a list separated by n ewlines and NOTHING else. each element of the list corresponds to the voiceover for the clip, to play over each 10s clip, and if you do not wish to voiceover the clip, the element should be NOTHING.
+#  each voiceover can be up to 50 words to explain, be descriptive. make up feelings, use metaphors, use your imagination!!
+#  here is an example output for an example with 6 video clips where 3 were chosen for voiceover, and 3 are left with original audio:
+# =========================
+
+# P
+prompt = """
+you are voiceovering various segments of a video to make a story. the prompt has the number of lines in the list and a list of dictionaries which contain metadata for sequential 10 second video clips. the numbers of lines of your output must match the length of the prompt list (each video gets one line of voiceover / NOTHING if you choose not to voiceover that video)
+
+PROMPT:
+
+6
+[{'transcript': 'BUZZING', 'scene_descriptions': [{'items': ['person', 'person', 'person', 'person', 'person', 'backpack', 'mouse'], 'description': 'a group of people standing around a room', 'face': None}, {'items': ['person', 'person'], 'description': 'a woman walking down a hallway in a hospital', 'face': None}]}, {'transcript': "What's your favorite kind of pasta, Nathan? I like tortellinis. Tortellinis? Not really pasta, though. ", 'scene_descriptions': [{'items': ['person', 'person'], 'description': 'a man standing in a room with a cell phone', 'face': None}, {'items': ['person', 'person'], 'description': 'a man in a gray shirt', 'face': None}]}, {'transcript': "You have to go around this way, the line's too big. Woah. Okay, that's a wrap.", 'scene_descriptions': [{'items': ['cat'], 'description': 'a woman is standing in a room with a mirror', 'face': None}, {'items': ['tv', 'person'], 'description': 'a group of people sitting around a table', 'face': None}]}, {'transcript': "I think it's going to be a little higher, like an eye level. Eye level? Isn't this a", 'scene_descriptions': [{'items': ['person', 'person', 'refrigerator'], 'description': 'a white wall with drawings on it', 'face': None}, {'items': ['person', 'person', 'person', 'person', 'person', 'person', 'person', 'person', 'dining table'], 'description': 'a group of people standing in a room', 'face': None}]}, {'transcript': "It's supposed to be like here. But it's going to be like, ideally, producing like, forward, perfectly forward all the time. Perfectly forward? It would be less ground, minimizing the amount of ground.", 'scene_descriptions': [{'items': ['person', 'dog'], 'description': 'a man is playing with a video game', 'face': None}, {'items': ['person', 'person', 'person'], 'description': 'a man in a blue shirt', 'face': None}]}, {'transcript': "Oh, okay, okay. I'll just lean it up a bit. There's the TV.", 'scene_descriptions': [{'items': ['person', 'person', 'person'], 'description': 'a group of people are sitting at tables', 'face': None}, {'items': ['tv', 'person', 'chair'], 'description': 'a man is standing in a room with a computer', 'face': None}]}]
+
+ ================
+
+ OUTPUT:
+
+ A group gathers around tables, conversation buzzing. In a hospital, a woman strolls down a hallway.
+"What's your favorite pasta, Nathan?" A man stands with a cell phone. Another in a gray shirt listens.
+NOTHING
+In a room, a woman gazes at a mirror, a group discusses around a table.
+NOTHING
+Playing a video game, a man interacts with a dog. In a blue shirt, another contemplates.
+
+==================
+
+PROMPT:
+"""
+
+prompt = """
+
+we are writing a 6 part screenplay loosely based on the above transcript of a real audio transcript. The screenplay will have 6 distinct scenes, each 10 seconds long. For 3 of these scenes, you will write a 3rd person limited narration. For the remaining 3, the original real audio will be kept. Select which 3 are narrated over, and which 3 are kept, to your liking. Ensure that the entire 6 part scene has a coherent and interesting storyline, full of exciting twists and turns that will entertain the audience! Consider drama such as a divorce happening. Note that the storyline MUST be coherent and very easy to follow. Each scene has to transition to the next scene in a way that makes sense.
+
+Here are more concrete limitations:
+For the 3 scenes that have the 3rd person narration, they should only be 1-2 sentences long.
+For all 6 scenes, format your output for each scene as an element, inside of a Python list of 6 elements. Each element will have 2 elements nested inside, which will be NARRATION or TRANSCRIPT and then the actual text. For example, I may have element 1 be ["narration", "A bustling hospital hallway. A man named Nathan faces a daunting line."] 
+
+Format output as follows:
+[["xxx", "xxx"],
+    ["xxx", "xxx"],
+    ["xxx", "xxx"],
+    ["xxx", xxx"],
+    ["xxx", "xxx"],
+    ["xxx", "xxx"]]
+
+DO NOT output any additional code, comments, words, symbols, or anything at all. Keep the output very strict to the provided format above. ONLY RESPOND WITH THE OUTPUT.
+output:
+
+
 """
 
 
@@ -102,10 +160,10 @@ def extract_frames(video_path, frame_interval=120):
 
     print(transcript)
 
-    if len(transcript) < 60:
+    if True or len(transcript) < 60:
         cap = cv2.VideoCapture(video_path)
 
-        frame_count = 0
+        frame_count = 0 
         images = []
 
         while True:
@@ -145,7 +203,7 @@ def extract_frames(video_path, frame_interval=120):
             desc = processor.decode(out[0], skip_special_tokens=True)
 
 
-            list_of_lists_of_things.append({"items":things, "description":desc, "face":face_id})
+            list_of_lists_of_things.append({"items":things, "description":desc})
         
     final_data  = {"transcript" : transcript, "scene_descriptions":list_of_lists_of_things}
     print(final_data)
@@ -215,53 +273,53 @@ def get_frames(folder):
     return image_list
 
 def get_files(output_folder):
-    # gpt_query = ""
-    # for i,image in enumerate(get_frames(output_folder)):
+    gpt_query = ""
+    for i,image in enumerate(get_frames(output_folder)):
 
-    #     raw_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        raw_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    #     face_id=None
-    #     # face_id = id_face(Image.fromarray(image), "shrockers/")
+        face_id=None
+        # face_id = id_face(Image.fromarray(image), "shrockers/")
 
-    #     # unconditional image captioning
-    #     inputs = processor(raw_image, return_tensors="pt")
-
-
-    #     out = blip_model.generate(**inputs)
-    #     desc = processor.decode(out[0], skip_special_tokens=True)
-    #     gpt_query += f"{i}: {desc}\n"
-
-    # gpt_query += "\n\n give me a comma separated list of numbers of the top 3 most interesting descriptions. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS:  1,4,6"
-
-    gpt_query = """0: a man in a blue shirt
-1: a man in a white shirt
-2: a man in a blue shirt is standing in a room
-3: a man is walking through a hallway in a building
-4: a man in a blue shirt and white pants
-5: a man in a gray shirt
-6: a man with curly hair
-7: a man in a gray shirt and black pants
-8: a blur of people walking through a building
-9: a white desk with a monitor on it
-10: a man in a room with a guitar
-11: a man in a white shirt is walking up a stair
-12: a blur of people walking down a hospital hallway
-13: a group of people are walking through a building
-14: a group of people are walking around a room
-15: a man in a gray sweater
-16: a blur of a person walking down a hospital hallway
-17: a young boy is walking down a hallway
+        # unconditional image captioning
+        inputs = processor(raw_image, return_tensors="pt")
 
 
-#  give me a comma separated list of numbers of the top 6 most interesting descriptions that make a good storyline together. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS WHERE <number> is a number like 1 or 2 or 3 etc:  <number>,<number>,<number>,<number>,<number>,<number>
-# """
+        out = blip_model.generate(**inputs)
+        desc = processor.decode(out[0], skip_special_tokens=True)
+        gpt_query += f"{i+1}: {desc}\n"
+
+    gpt_query += "\n\n give me a comma separated list of numbers of the top 6 most interesting description numbers from the above list. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED AS A COMMA SEPARATED LIST OF 6 NUMBERS"
+
+#     gpt_query = """0: a man in a blue shirt
+# 1: a man in a white shirt
+# 2: a man in a blue shirt is standing in a room
+# 3: a man is walking through a hallway in a building
+# 4: a man in a blue shirt and white pants
+# 5: a man in a gray shirt
+# 6: a man with curly hair
+# 7: a man in a gray shirt and black pants
+# 8: a blur of people walking through a building
+# 9: a white desk with a monitor on it
+# 10: a man in a room with a guitar
+# 11: a man in a white shirt is walking up a stair
+# 12: a blur of people walking down a hospital hallway
+# 13: a group of people are walking through a building
+# 14: a group of people are walking around a room
+# 15: a man in a gray sweater
+# 16: a blur of a person walking down a hospital hallway
+# 17: a young boy is walking down a hallway
+
+
+# #  give me a comma separated list of numbers of the top 6 most interesting descriptions that make a good storyline together. DO NOT SAY ANYTHING ELSE EXCEPT THE ANSWER. YOUR ANSWER MUST BE FORMATTED LIKE THIS WHERE <number> is a number like 1 or 2 or 3 etc:  <number>,<number>,<number>,<number>,<number>,<number>
+# # """
     print(gpt_query)
 
     # Make a call to the OpenAI API
     response = openai.Completion.create(
     engine="text-davinci-002",
     prompt=gpt_query,
-    max_tokens=5000
+    max_tokens=2000
     )
 
     # Extract the generated message
@@ -285,31 +343,46 @@ if __name__ == "__main__":
     # curr_clip = "MOM10s/clip_6.mp4"
 
     interesting_files = get_files(output_folder)
+    final_data_list = []
 
     clips = []
     for curr_clip in interesting_files:
         curr_clip = output_folder + "/" +curr_clip
-        final_data = extract_frames(curr_clip)
+    #     final_data = extract_frames(curr_clip)
+    #     final_data_list.append(final_data)
+    
+    # print(final_data_list)
+
+    final_data_list = [{'transcript': 'What was that?', 'scene_descriptions': [{'items': ['person'], 'description': 'a man is sitting down on a laptop'}, {'items': ['person'], 'description': 'a man with brown hair'}, {'items': [], 'description': 'a blur of a person in a room'}, {'items': ['person'], 'description': 'a man with a blue shirt'}, {'items': ['person', 'person'], 'description': 'a man sitting on a chair'}]}, {'transcript': 'Okay, guys, we are at 30 seconds of video. And wait, how long is the movie going to be?', 'scene_descriptions': [{'items': [], 'description': 'a large machine is moving through a factory'}, {'items': [], 'description': 'a blur of a person walking down a hallway'}, {'items': ['person', 'person'], 'description': 'two people sitting in chairs in a room'}, {'items': ['person', 'person', 'laptop'], 'description': 'a group of people sitting around a table with laptops'}, {'items': [], 'description': 'a blur of people on a train'}]}, {'transcript': "Oh, that's pretty delicious. Bubble, what do you have to say?", 'scene_descriptions': [{'items': [], 'description': "a close up of a person's face with a yellow and black hair"}, {'items': ['person'], 'description': 'a person is cutting a cake on a table'}, {'items': ['teddy bear'], 'description': 'a person is holding a stuffed animal'}, {'items': ['teddy bear'], 'description': 'a stuffed animal is being fed by a person'}, {'items': ['person'], 'description': 'a man is seen in the middle of a restaurant'}]}, {'transcript': 'Thank you for watching the video.', 'scene_descriptions': [{'items': [], 'description': 'a long hallway with a blue and yellow line on the floor'}, {'items': [], 'description': 'a blur of a door in a hallway'}, {'items': [], 'description': 'a person is holding a knife in their hand'}, {'items': [], 'description': 'a bed with a yellow pillow and a white wall'}, {'items': [], 'description': 'a door is open in an office'}]}, {'transcript': "Thank you for watching and don't forget to subscribe!", 'scene_descriptions': [{'items': ['refrigerator'], 'description': 'a white wall with a sign on it'}, {'items': [], 'description': 'a man is walking down a hallway in an office'}, {'items': [], 'description': 'a long hallway with a door and a person walking down the hallway'}, {'items': ['refrigerator', 'refrigerator'], 'description': 'a long hallway with a black floor and white walls'}, {'items': [], 'description': 'a hallway with a wooden floor and a yellow door'}]}, {'transcript': "That's like the one place you shouldn't be. There was no one in there. Bro, that's like actually the worst.", 'scene_descriptions': [{'items': ['person', 'person', 'person'], 'description': 'a group of people sitting in a room'}, {'items': ['laptop', 'person'], 'description': 'a group of people sitting around a laptop'}, {'items': ['person', 'person', 'laptop'], 'description': 'a man sitting on a chair with a laptop'}, {'items': ['cell phone'], 'description': 'a blur of people on an airplane'}, {'items': ['person'], 'description': 'a man is seen in the middle of a room with a woman in the middle'}]}]
+
+    response = openai.Completion.create(engine="text-davinci-003",prompt=  prompt + "\n\n" + str(len(final_data_list)) + "\n" + str(json.dumps(final_data_list)),max_tokens=1000,presence_penalty=1)
+
+    message = response['choices'][0]['text']
+    print(message)
+
+    voiceovers = [e[1] if e[0]=="narration" else "NOTHING" for e in eval(message)]
+    
+
+    # voiceovers = [e for e in message.split("\n") if len(e)>2 and "output:" not in e.lower()]
+    if len(voiceovers) > len(interesting_files):
+        voiceovers = voiceovers[0:len(interesting_files)]
+
+    lengths = [(c,len(e["transcript"])) for c,e in enumerate(final_data_list)]
+    lengths.sort(key = lambda x: x[1])
+    no_voiceover = [lengths[0][0], lengths[1][0]]
+
+    for index,voiceover in enumerate(voiceovers):
         audio_clip = 0
+        curr_clip = output_folder + "/" + interesting_files[index]
 
-        if len(final_data["transcript"]) < 60:
-            # Make a call to the OpenAI API
-            response = openai.Completion.create(
-            engine="text-davinci-002",
-            prompt=prompt + "\n" + str(final_data),
-            max_tokens=200
-            )
-
-            # Extract the generated message
-            message = response['choices'][0]['text']
-
+        if "NOTHING" not in voiceover and index not in no_voiceover:
             audio = generate(
-            text=message,
+            text=voiceover,
             voice="Harry",
             model="eleven_multilingual_v2"
             )
 
-            print(message)
+            print(voiceover)
 
             save(
                 audio,  "output_eleven.wav"
@@ -324,6 +397,6 @@ if __name__ == "__main__":
             video_clip = video_clip.set_audio(audio_clip)
 
         clips.append(video_clip)
-    
+
     final_clip = concatenate_videoclips(clips)
-    final_clip.write_videofile("running5.mp4")
+    final_clip.write_videofile("running8.mp4")
