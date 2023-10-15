@@ -384,7 +384,7 @@ def choose_filter(voiceover):
                 3: [cv2.COLORMAP_BONE, .9,.3,False],
                 4: [cv2.COLORMAP_SUMMER,.6,1,False],
                 5: [cv2.COLORMAP_DEEPGREEN, .9,1,False],
-                6: [cv2.COLOR_VIRIDIS, .9,.6,False],
+                6: [cv2.COLORMAP_VIRIDIS, .9,.6,False],
                 7: [None,None, .8,True]
                 }
     return filter_dict[genre_key]
@@ -507,7 +507,7 @@ def generate_video():
     
     input_folder = "../MOMents"
     output_folder = "../MOM10s"
-    split_into_10s(input_folder, output_folder)
+    # split_into_10s(input_folder, output_folder)
 
     # curr_clip = "MOM10s/clip_6.mp4"
 
@@ -591,4 +591,4 @@ def generate_video():
 
 
 
-# generate_video()
+generate_video()
