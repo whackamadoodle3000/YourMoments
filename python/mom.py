@@ -308,7 +308,7 @@ def make_background_audio(voiceover):
                 12: 'very_mysterious.mp3'}
 
     #make a copy of the song you want and name it background_music.mp3
-    background_audio = AudioSegment.from_mp3(song_dict.get(genre_key))
+    background_audio = AudioSegment.from_mp3("audio_assets/"+song_dict.get(genre_key))
     background_audio.export("background_music.mp3", format="mp3")
 
     #TODO loop if the song is too short? 
@@ -402,8 +402,9 @@ if __name__ == "__main__":
 
     response = openai.Completion.create(engine="text-davinci-003",prompt=  str(json.dumps(final_data_list)) + "\n" + prompt,max_tokens=2000,presence_penalty=1)
     #prompt + "\n\n" + str(len(final_data_list)) + "\n" + str(json.dumps(final_data_list))
-    message = response['choices'][0]['text']
-    if message[-2:] != "]]":
+    message = response['choices'][0]['text'].strip()
+
+    if message[-5:].count(']') != 2:
         message+=']'
     print(message)
 
@@ -449,7 +450,8 @@ if __name__ == "__main__":
     
     #adding background audio
     make_background_audio(message)
-    audio_background = mp.AudioFileClip('audio_assets/music/background_music.mp3') #background audio
+    audio_background = mp.AudioFileClip('background_music.mp3') #background audio
+    audio_background = audio_background.subclip(0, min([60,audio_background.duration]))
     final_audio = mp.CompositeAudioClip([final_clip.audio, audio_background]) #add in background audio to create final audio
     final_clip = final_clip.set_audio(final_audio) #set audio to final audio
     final_clip.write_videofile("running8.mp4")
